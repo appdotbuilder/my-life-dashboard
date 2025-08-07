@@ -1,10 +1,12 @@
+import { db } from '../db';
+import { musicTracksTable } from '../db/schema';
 import { type CreateMusicTrackInput, type MusicTrack } from '../schema';
 
-export async function createMusicTrack(input: CreateMusicTrackInput): Promise<MusicTrack> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new music track record and persisting it in the database.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+export const createMusicTrack = async (input: CreateMusicTrackInput): Promise<MusicTrack> => {
+  try {
+    // Insert music track record
+    const result = await db.insert(musicTracksTable)
+      .values({
         user_id: input.user_id,
         title: input.title,
         artist: input.artist,
@@ -12,7 +14,16 @@ export async function createMusicTrack(input: CreateMusicTrackInput): Promise<Mu
         duration_seconds: input.duration_seconds,
         genre: input.genre || null,
         spotify_url: input.spotify_url || null,
-        is_favorite: input.is_favorite,
-        added_at: new Date() // Placeholder date
-    } as MusicTrack);
-}
+        is_favorite: input.is_favorite
+      })
+      .returning()
+      .execute();
+
+    // Return the created music track
+    const musicTrack = result[0];
+    return musicTrack;
+  } catch (error) {
+    console.error('Music track creation failed:', error);
+    throw error;
+  }
+};

@@ -1,18 +1,50 @@
+import { db } from '../db';
+import { calendarEventsTable } from '../db/schema';
 import { type UpdateCalendarEventInput, type CalendarEvent } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function updateCalendarEvent(input: UpdateCalendarEventInput): Promise<CalendarEvent> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is updating an existing calendar event in the database.
-    return Promise.resolve({
-        id: input.id,
-        user_id: 0, // Placeholder user_id
-        title: input.title || 'Placeholder Title',
-        description: input.description !== undefined ? input.description : null,
-        start_time: input.start_time || new Date(),
-        end_time: input.end_time || new Date(),
-        location: input.location !== undefined ? input.location : null,
-        is_all_day: input.is_all_day || false,
-        created_at: new Date(), // Placeholder date
-        updated_at: new Date() // Updated timestamp
-    } as CalendarEvent);
-}
+export const updateCalendarEvent = async (input: UpdateCalendarEventInput): Promise<CalendarEvent> => {
+  try {
+    // Build the update object with only the fields that are provided
+    const updateData: Partial<typeof calendarEventsTable.$inferInsert> = {};
+    
+    if (input.title !== undefined) {
+      updateData.title = input.title;
+    }
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+    if (input.start_time !== undefined) {
+      updateData.start_time = input.start_time;
+    }
+    if (input.end_time !== undefined) {
+      updateData.end_time = input.end_time;
+    }
+    if (input.location !== undefined) {
+      updateData.location = input.location;
+    }
+    if (input.is_all_day !== undefined) {
+      updateData.is_all_day = input.is_all_day;
+    }
+
+    // Always update the updated_at timestamp
+    updateData.updated_at = new Date();
+
+    // Update the calendar event
+    const result = await db
+      .update(calendarEventsTable)
+      .set(updateData)
+      .where(eq(calendarEventsTable.id, input.id))
+      .returning()
+      .execute();
+
+    if (result.length === 0) {
+      throw new Error(`Calendar event with ID ${input.id} not found`);
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error('Calendar event update failed:', error);
+    throw error;
+  }
+};

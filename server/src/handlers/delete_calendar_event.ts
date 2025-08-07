@@ -1,6 +1,19 @@
-export async function deleteCalendarEvent(eventId: number): Promise<boolean> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is deleting a specific calendar event from the database.
-    // Returns true if deletion was successful, false otherwise.
-    return Promise.resolve(true);
-}
+import { db } from '../db';
+import { calendarEventsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+export const deleteCalendarEvent = async (eventId: number): Promise<boolean> => {
+  try {
+    // Delete the calendar event by ID
+    const result = await db.delete(calendarEventsTable)
+      .where(eq(calendarEventsTable.id, eventId))
+      .returning()
+      .execute();
+
+    // Return true if a row was deleted, false if no event was found
+    return result.length > 0;
+  } catch (error) {
+    console.error('Calendar event deletion failed:', error);
+    throw error;
+  }
+};
